@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+<title>Search | AutoHotkey v2</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="ahk:build-search-skip" content="true" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link href="static/theme.css" rel="stylesheet" />
+<link href="static/dark.css" rel="stylesheet" media="(prefers-color-scheme: dark)" id="dark_css" />
+<script src="static/content.js" id="content_js"></script>
+</head>
+<body>
+<p>Searching...</p>
+<p>Usage: <code class="no-highlight">search.htm?q=query&m=mode</code></p>
+<ul>
+  <li>mode = 1 &RightArrow; index tab</li>
+  <li>mode = 2 &RightArrow; search tab</li>
+</ul>
+<p><code class="no-highlight">&m=mode</code> is optional and defaults to mode #1 (index).</p>
+<script>
+  (function () {
+    cache.init();
+    const pQuery = getUrlParamFromSearchOrHash('q');
+    const pMode = (Number(getUrlParamFromSearchOrHash('m')) || 1);
+    const fallback_link = site.scriptDir + '/../';
+    switch (pMode) {
+      case 1: useIndexTab(); break;
+      case 2: useSearchTab(); break;
+    }
+    function useIndexTab() {
+      const input = (cache.index_input = pQuery).toLowerCase();
+      cache.forced = {selectedTab: 1};
+      if (!site.waitForDataDocs(useIndexTab)) return;
+      if (!site.waitForDataIndex(useIndexTab)) return;
+      if (!site.waitForDataTranslate(useIndexTab)) return;
+      const index = new host.setupSidebarTabsPageIndex;
+      const items = index.createList(cache.index_data, -1);
+      const match = items.find(function (item) {
+        return item.label.toLowerCase().indexOf(input) === 0;
+      });
+      window.location = match ? match.href : fallback_link;
+      cache.save();
+    }
+    function useSearchTab() {
+      const input = cache.search_input = pQuery;
+      cache.forced = {selectedTab: 2};
+      if (!site.waitForDataSearch(useSearchTab)) return;
+      const search = new host.setupSidebarTabsPageSearch;
+      const items = search.createList(search.convertInputToArray(input));
+      window.location = items.length ? items[0].href : fallback_link;
+      cache.save();
+    }
+    function getUrlParamFromSearchOrHash(name) {
+      return getUrlParam(name) || getUrlParamFromHash(name);
+    }
+    function getUrlParamFromHash(name) { // for CHM
+      const params = window.location.hash.substring(1).split('&');
+      const match = params.find(function (param) { return param.split('=')[0] === name; });
+      if (!match) return undefined;
+      const value = match.split('=')[1];
+      return value ? decodeURIComponent(value) : true;
+    }
+  })();
+</script>
+</body>
+</html>
